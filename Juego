@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Demo Mario 2D Básico</title>
+<style>
+  body {
+    margin: 0;
+    background: #87ceeb;
+    overflow: hidden;
+  }
+  #gameCanvas {
+    display: block;
+    background: #66bb66;
+    margin: auto;
+    border: 2px solid #333;
+  }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="640" height="360"></canvas>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  const gravity = 0.6;
+  const floorHeight = 300;
+
+  const player = {
+    x: 50,
+    y: floorHeight,
+    width: 32,
+    height: 48,
+    color: '#ff0000',
+    vy: 0,
+    speed: 4,
+    jumping: false,
+  };
+
+  const keys = {
+    left: false,
+    right: false,
+    up: false,
+  };
+
+  const platforms = [
+    { x: 0, y: floorHeight + 48, width: 640, height: 20 },
+    { x: 200, y: floorHeight + 48 - 50, width: 100, height: 20 },
+    { x: 350, y: floorHeight + 48 - 100, width: 120, height: 20 },
+  ];
+
+  const goal = {
+    x: 600,
+    y: floorHeight + 48 - 48,
+    width: 32,
+    height: 48,
+    color: '#ffff00',
+  };
+
+  function rectsColliding(a, b) {
+    return (
+      a.x < b.x + b.width &&
+      a.x + a.width > b.x &&
+      a.y < b.y + b.height &&
+      a.y + a.height > b.y
+    );
+  }
+
+  window.addEventListener('keydown', e => {
+    if (e.code === 'ArrowLeft') keys.left = true;
+    if (e.code === 'ArrowRight') keys.right = true;
+    if (e.code === 'Space') keys.up = true;
+  });
+
+  window.addEventListener('keyup', e => {
+    if (e.code === 'ArrowLeft') keys.left = false;
+    if (e.code === 'ArrowRight') keys.right = false;
+    if (e.code === 'Space') keys.up = false;
+  });
+
+  function update() {
+    if (keys.left) player.x -= player.speed;
+    if (keys.right) player.x += player.speed;
+
+    if (keys.up && !player.jumping) {
+      player.vy = -12;
+      player.jumping = true;
+    }
+
+    player.vy += gravity;
+    player.y += player.vy;
+
+    let onPlatform = false;
+    for (let plat of platforms) {
+      if (
+        player.x < plat.x + plat.width &&
+        player.x + player.width > plat.x &&
+        player.y + player.height < plat.y + player.vy + 10 &&
+        player.y + player.height + player.vy >= plat.y
+      ) {
+        player.y = plat.y - player.height;
+        player.vy = 0;
+        player.jumping = false;
+        onPlatform = true;
+      }
+    }
+
+    if (!onPlatform && player.y + player.height > floorHeight + 48) {
+      player.y = floorHeight + 48 - player.height;
+      player.vy = 0;
+      player.jumping = false;
+    }
+
+    if (player.x < 0) player.x = 0;
+    if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+    if (rectsColliding(player, goal)) {
+      alert('¡Has llegado a la meta! 🎉');
+      player.x = 50;
+      player.y = floorHeight;
+      player.vy = 0;
+      player.jumping = false;
+    }
+  }
+
+  function draw() {
+    ctx.fillStyle = '#87ceeb';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#654321';
+    for (let plat of platforms) {
+      ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+    }
+
+    ctx.fillStyle = goal.color;
+    ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
+
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  loop();
+</script>
+</body>
+</html>
